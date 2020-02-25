@@ -53,8 +53,8 @@
       become: True
 
     - role: cuda
-      vars:
-        ensure_gpu_model_available: "Tesla K80"
+      # vars:
+      #   ensure_gpu_model_available: "Tesla K80"
       become: True
 
     - role: darknet
