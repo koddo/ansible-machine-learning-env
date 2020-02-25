@@ -1,0 +1,28 @@
+---
+# tasks file for tensorflow_in_docker
+
+- name: Install pip
+  apt:
+    update_cache: yes
+    cache_valid_time: 600
+    name:
+      - python-setuptools     # by whatever reason pip needs this
+      - python-pip
+      - python3-setuptools
+      - python3-pip
+
+- name: Install the docker module in order to use the docker_image in ansible
+  pip:
+    name: docker
+    state: latest
+
+# https://stackoverflow.com/questions/28320134/how-to-list-all-tags-for-a-docker-image-on-a-remote-registry
+# command to list all tags: $ IMAGE='tensorflow/tensorflow' ; wget -q https://registry.hub.docker.com/v1/repositories/${IMAGE}/tags -O -  | sed -e 's/[][]//g' -e 's/"//g' -e 's/ //g' | tr '}' '\n'  | awk -F: '{print $3}'
+
+- name: Pull tensorflow images
+  docker_image:
+    source: pull
+    name: "tensorflow/tensorflow:{{ item }}"
+  loop: "{{ tensorflow_docker_tags }}"
+
+# command to check it works: $ docker run --runtime=nvidia -it --rm tensorflow/tensorflow:2.0.0b1-gpu-py3-jupyter python -c 'import tensorflow as tf; print(tf.test.gpu_device_name())'

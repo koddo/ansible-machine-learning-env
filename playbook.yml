@@ -1,0 +1,126 @@
+---
+- name: Install docker and some additional packages.
+  hosts: all
+  remote_user: ubuntu
+
+  vars:
+    - acceptable_distribution: ['Ubuntu']
+    - acceptable_distribution_version: ['18.04']
+    
+
+  pre_tasks:
+
+    - name: Make sure it is an acceptable OS
+      debug:
+        msg: "The OS is: {{ansible_distribution}} {{ ansible_distribution_version }}. Acceptable: {{acceptable_distribution}}, {{acceptable_distribution_version}}."
+      failed_when: not ( (ansible_distribution in acceptable_distribution) and (ansible_distribution_version in acceptable_distribution_version) )
+
+  
+    - name: Install aptitude because ansible does not like apt-get for whatever reason
+      apt:
+        force_apt_get: yes
+        name:
+          - aptitude
+        state: present
+      become: True
+
+    - name: Install git and python
+      apt:
+        update_cache: yes
+        cache_valid_time: 600
+        name:
+          - git
+          - python-setuptools     # pip needs this, don't ask me why
+          - python-pip
+          - python3-setuptools
+          - python3-pip
+          - python3        # this installs python3.6, but we have the latter explicitly later nonetheless
+          - python3-venv
+          - python3.6
+          - python3.6-venv
+          - python3.7
+          - python3.7-venv
+      become: True
+
+
+  roles:
+
+    - role: tensorflow_in_docker
+      vars:
+        tensorflow_docker_tags:
+          - 1.14.0-gpu-py3-jupyter
+          - 2.0.0b1-gpu-py3-jupyter
+      become: True
+
+    - role: cuda
+      vars:
+        ensure_gpu_model_available: "Tesla K80"
+      become: True
+
+    - role: darknet
+      vars:
+        darknet_version: 61c9d02ec461e30d55762ec7669d6a1d3c356fb2
+        repo_path: /home/ubuntu/darknet
+        cuda_path: /usr/local/cuda-10.0
+        yolov3_url: https://pjreddie.com/media/files/yolov3.weights
+        yolov3_path: /home/ubuntu/darknet/data/yolov3.weights
+
+        
+  tasks:
+
+    - name: Create a venv -- tensorflow-stable-py36
+      pip:
+        virtualenv: /home/ubuntu/.python_venv/tensorflow-stable-py36
+        virtualenv_command: /usr/bin/python3.6 -m venv
+        name:
+          - jupyter
+          - tensorflow-gpu
+        
+    - name: Create a venv -- tensorflow-stable-py37
+      pip:
+        virtualenv: /home/ubuntu/.python_venv/tensorflow-stable-py37
+        virtualenv_command: /usr/bin/python3.7 -m venv
+        name:
+          - jupyter
+          - tensorflow-gpu
+        
+    - name: Create a venv -- tensorflow2-beta-py36
+      pip:
+        virtualenv: /home/ubuntu/.python_venv/tensorflow2-beta-py36
+        virtualenv_command: /usr/bin/python3.6 -m venv
+        name:
+          - jupyter
+          - tensorflow-gpu==2.0.0-beta1
+
+    - name: Create a venv -- tensorflow2-beta-py37
+      pip:
+        virtualenv: /home/ubuntu/.python_venv/tensorflow2-beta-py37
+        virtualenv_command: /usr/bin/python3.7 -m venv
+        name:
+          - jupyter
+          - tensorflow-gpu==2.0.0-beta1
+
+
+
+
+    - name: Create a venv -- pytorch-py36
+      pip:
+        virtualenv: /home/ubuntu/.python_venv/pytorch-py36
+        virtualenv_command: /usr/bin/python3.6 -m venv
+        name:
+          - jupyter
+          - numpy==1.17.0
+          - torch==1.2.0
+          - torchvision==0.4.0
+        
+    - name: Create a venv -- pytorch-py37
+      pip:
+        virtualenv: /home/ubuntu/.python_venv/pytorch-py37
+        virtualenv_command: /usr/bin/python3.7 -m venv
+        name:
+          - jupyter
+          - numpy==1.17.0
+          - torch==1.2.0
+          - torchvision==0.4.0
+
+

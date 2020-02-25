@@ -1,0 +1,1 @@
+- include: roles/tensorflow_in_docker/requirements.yml

@@ -1,0 +1,33 @@
+---
+# tasks file for darknet
+
+# https://pjreddie.com/darknet/install/
+
+- name: Clone the darknet git repo
+  git:
+    repo: https://github.com/pjreddie/darknet.git
+    version: "{{ darknet_version }}"
+    dest: "{{ repo_path }}"
+    update: no
+    
+- name: Set GPU=1 in Makefile for darknet
+  lineinfile:
+    path: "{{ repo_path }}/Makefile"
+    regexp: '^GPU='
+    line: GPU=1
+
+- name: Build the default target
+  environment:
+    PATH: "{{cuda_path}}/bin:{{ ansible_env.PATH }}"
+    LD_LIBRARY_PATH: "{{cuda_path}}/lib64:{{ ansible_env.get('LD_LIBRARY_PATH','') }}"
+  make:
+    chdir: "{{ repo_path }}"
+
+- name: Download yolov3 weights
+  get_url:
+    url: "{{ yolov3_url }}"
+    dest: "{{ yolov3_path }}"
+
+# TODO: run a test yolo classification, https://pjreddie.com/darknet/yolo/
+# $ ./darknet detect cfg/yolov3.cfg yolov3.weights data/dog.jpg
+# we only have to download a dog.jpg and run it
